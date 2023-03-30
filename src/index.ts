@@ -13,7 +13,7 @@ export type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 app
-  .get("/", serveStatic({ root: "../dist/" }))
+  .get("/", serveStatic({ root: "./" }))
   .post("/api/room", async (c) => {
     // The request is for just "/api/room", with no ID.
     // POST to /api/room creates a private room.

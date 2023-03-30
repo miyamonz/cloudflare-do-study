@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2023-03-26"
 
 [site]
-bucket = "./public"
+bucket = "./dist"
 
 [durable_objects]
 bindings = [
