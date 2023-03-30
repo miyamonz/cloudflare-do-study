@@ -2,6 +2,9 @@ name = "cloudflare-do-study_worker"
 main = "src/index.ts"
 compatibility_date = "2023-03-26"
 
+[site]
+bucket = "./dist"
+
 [durable_objects]
 bindings = [
   {name = "HELLO_DURABLE", class_name = "HelloDurable"},

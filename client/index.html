@@ -301,7 +301,7 @@
         goPublicButton.disabled = true;
         event.currentTarget.disabled = true;
 
-        let response = await fetch("https://" + hostname + "/api2/room", {
+        let response = await fetch("https://" + hostname + "/api/room", {
           method: "POST",
         });
         if (!response.ok) {
@@ -400,7 +400,7 @@
       // If we are running via wrangler dev, use ws:
       const wss = document.location.protocol === "http:" ? "ws://" : "wss://";
       let ws = new WebSocket(
-        wss + hostname + "/api2/room/" + roomname + "/websocket"
+        wss + hostname + "/api/room/" + roomname + "/websocket"
       );
       let rejoined = false;
       let startTime = Date.now();

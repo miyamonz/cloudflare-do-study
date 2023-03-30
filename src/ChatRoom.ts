@@ -1,12 +1,7 @@
-import { Env } from "../../src";
+import { Bindings as Env } from ".";
 import { handleErrors } from "./handleErrors";
 // import { RateLimiterClient } from "./RateLimiter";
 
-// =======================================================================================
-// The ChatRoom Durable Object Class
-// ChatRoom implements a Durable Object that coordinates an individual chat room. Participants
-// connect to the room using WebSockets, and the room broadcasts messages from each participant
-// to all others.
 type Session = {
   webSocket: WebSocket;
   blockedMessages: string[];
@@ -43,18 +38,14 @@ export class ChatRoom {
   // directly from the internet. In the future, we will support other formats than HTTP for these
   // communications, but we started with HTTP for its familiarity.
   async fetch(request: Request) {
-    console.log("ChatRoom fetch", request);
     return await handleErrors(request, async () => {
       let url = new URL(request.url);
-      console.log(url);
 
       switch (url.pathname) {
         case "/websocket": {
-          console.log(url.pathname);
           // The request is to `/api/room/<name>/websocket`. A client is trying to establish a new
           // WebSocket session.
           if (request.headers.get("Upgrade") != "websocket") {
-            console.log(request.headers);
             return new Response("expected websocket", { status: 400 });
           }
 
@@ -78,7 +69,7 @@ export class ChatRoom {
         }
 
         default:
-          return new Response("Not found!!!!!!!!!!", { status: 404 });
+          return new Response("Not found", { status: 404 });
       }
     });
   }
@@ -87,7 +78,6 @@ export class ChatRoom {
   async handleSession(webSocket: WebSocket, ip: string) {
     // Accept our end of the WebSocket. This tells the runtime that we'll be terminating the
     // WebSocket in JavaScript, not sending it elsewhere.
-    //@ts-expect-error
     webSocket.accept();
 
     // Set up our rate limiter client.

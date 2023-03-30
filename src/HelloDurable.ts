@@ -1,4 +1,4 @@
-import { Env } from ".";
+import { Bindings as Env } from ".";
 
 export class HelloDurable implements DurableObject {
   constructor(

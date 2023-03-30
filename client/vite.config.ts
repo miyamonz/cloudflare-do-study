@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   build: {
     minify: true,
-    outDir: "./pages",
+    outDir: "../dist",
   },
   plugins: [react()],
 });

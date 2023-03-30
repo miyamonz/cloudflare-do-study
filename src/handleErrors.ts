@@ -17,7 +17,6 @@ export async function handleErrors(
       const pair = new WebSocketPair();
       const [client, server] = [pair[0], pair[1]];
 
-      //@ts-expect-error
       server.accept();
       server.send(JSON.stringify({ error: err.stack }));
       server.close(1011, "Uncaught exception during session setup");
