@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev --local --do HELLO_DURABLE=HelloDurable@cloudflare-do-study -- vite",
+    "dev": "wrangler pages dev --local --do HELLO_DURABLE=HelloDurable@cloudflare-do-study_worker --do rooms=ChatRoom@cloudflare-do-study_worker -- vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "hono": "3.1.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
