@@ -1,12 +1,4 @@
 <!DOCTYPE html>
-<!--
-  THIS IS NOT THE INTERESTING FILE
-
-  This is just some UI code. There's nothing interesting and unique in this file. The interesting
-  thing about this demo is the server side, which is in chat.mjs.
-
-  WARNING: This was written by a systems engineer, not a web developer. It's probably bad.
--->
 
 <html>
   <head>
@@ -301,9 +293,12 @@
         goPublicButton.disabled = true;
         event.currentTarget.disabled = true;
 
-        let response = await fetch("https://" + hostname + "/api/room", {
-          method: "POST",
-        });
+        let response = await fetch(
+          window.location.protocol + "//" + hostname + "/api/room",
+          {
+            method: "POST",
+          }
+        );
         if (!response.ok) {
           alert("something went wrong");
           document.location.reload();

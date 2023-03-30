@@ -1,4 +1,4 @@
-export { HelloDurable } from "./HelloDurable";
+// export { HelloDurable } from "./HelloDurable";
 export { ChatRoom } from "./ChatRoom";
 
 import { Hono } from "hono";

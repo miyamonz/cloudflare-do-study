@@ -1,16 +1,15 @@
-name = "cloudflare-do-study_worker"
+name = "cloudflare-do-study"
 main = "src/index.ts"
 compatibility_date = "2023-03-26"
 
 [site]
-bucket = "./dist"
+bucket = "./public"
 
 [durable_objects]
 bindings = [
-  {name = "HELLO_DURABLE", class_name = "HelloDurable"},
   {name = "rooms", class_name = "ChatRoom"},
 ]
 
 [[migrations]]
-new_classes = ["HelloDurable", "ChatRoom"]
+new_classes = [ "ChatRoom"]
 tag = "v1"
