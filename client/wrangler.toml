@@ -1,0 +1,12 @@
+name = "cloudflare-do-study_client"
+compatibility_date = "2023-03-26"
+
+# cli経由でしか効かない？
+# [durable_objects]
+# bindings = [
+#   {name = "HELLO_DURABLE", class_name = "HelloDurable@cloudflare-do-study"},
+# ]
+
+# [[migrations]]
+# new_classes = ["HelloDurable"]
+# tag = "v1"
