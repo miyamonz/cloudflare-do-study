@@ -11,8 +11,7 @@ async function connectWebsocket(name: string) {
     wss + hostname + "/api/room/" + roomName + "/websocket"
   );
   const openPromise = new Promise<WebSocket>((resolve) => {
-    ws.addEventListener("open", (event) => {
-      ws.send(JSON.stringify({ name }));
+    ws.addEventListener("open", () => {
       resolve(ws);
     });
   });
@@ -130,6 +129,7 @@ const memberDataRecordAtom = atom((get) => {
   return record;
 });
 
+// update state when data comes from ws
 store.sub(connectionAtom, () => {
   const ws = store.get(connectionAtom);
   if (ws) {
@@ -155,6 +155,7 @@ store.sub(connectionAtom, () => {
     };
   }
 });
+
 function Room() {
   const [name] = useAtom(nameAtom);
   const [members] = useAtom(membersAtom);
