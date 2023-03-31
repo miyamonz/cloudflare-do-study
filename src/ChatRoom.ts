@@ -135,7 +135,6 @@ export class ChatRoom {
         //   );
         //   return;
         // }
-
         // I guess we'll use JSON.
         let data = JSON.parse(msg.data as string);
 
@@ -171,7 +170,18 @@ export class ChatRoom {
         }
 
         // Construct sanitized message for storage and broadcast.
-        data = { name: session.name, message: "" + data.message };
+        data = {
+          name: session.name,
+          message: "" + data.message,
+          ...(data.type === "mousePos"
+            ? {
+                type: data.type,
+                pos: data.pos,
+                isDown: data.isDown,
+                color: data.color,
+              }
+            : {}),
+        };
 
         // Block people from sending overly long messages. This is also enforced on the client,
         // so to trigger this the user must be bypassing the client code.

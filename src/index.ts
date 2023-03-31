@@ -13,7 +13,6 @@ export type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 app
-  .get("/", serveStatic({ root: "./" }))
   .post("/api/room", async (c) => {
     // The request is for just "/api/room", with no ID.
     // POST to /api/room creates a private room.
@@ -51,6 +50,7 @@ app
     // same signature as the global `fetch()` function, but the request is always sent to the
     // object, regardless of the request's URL.
     return roomObject.fetch(newUrl.toString(), c.req.raw);
-  });
+  })
+  .get("/*", serveStatic({ root: "./" }));
 
 export default app;
