@@ -113,15 +113,20 @@ store.sub(mousePosAtom, () => {
 });
 
 const membersAtom = atom([] as string[]);
+type MemberData = {
+  pos: { x: number; y: number };
+  isDown: boolean;
+  color: string;
+};
 const memberFamily = atomFamily((name: string) => {
   return atom({ pos: { x: 0, y: 0 }, isDown: false, color: "#000000" });
 });
-const memberPosRecordAtom = atom((get) => {
+const memberDataRecordAtom = atom((get) => {
   const members = get(membersAtom);
   const record = members.reduce((acc, name) => {
     acc[name] = get(memberFamily(name));
     return acc;
-  }, {} as Record<string, { pos: { x: number; y: number }; isDown: boolean; color: string }>);
+  }, {} as Record<string, MemberData>);
   return record;
 });
 
@@ -153,7 +158,7 @@ store.sub(connectionAtom, () => {
 function Room() {
   const [name] = useAtom(nameAtom);
   const [members] = useAtom(membersAtom);
-  const [memberPosRecord] = useAtom(memberPosRecordAtom);
+  const [memberRecord] = useAtom(memberDataRecordAtom);
 
   const ref = useRef<HTMLCanvasElement>(null);
   const [, setContext] = useAtom(canvasContextAtom);
@@ -197,7 +202,7 @@ function Room() {
           height="800"
           style={{ border: "solid 1px" }}
         />
-        {Object.entries(memberPosRecord).map(([name, data]) => {
+        {Object.entries(memberRecord).map(([name, data]) => {
           return (
             <div
               key={name}
