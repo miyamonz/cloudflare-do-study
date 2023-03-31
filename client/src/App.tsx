@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { atom, getDefaultStore, useAtom } from "jotai";
 import { atomFamily, atomWithStorage } from "jotai/utils";
 
@@ -35,11 +35,7 @@ function App() {
   if (state === "name") {
     return <InputName />;
   } else if (state === "room") {
-    return (
-      <Suspense fallback={<div>connecting...</div>}>
-        <Room />
-      </Suspense>
-    );
+    return <Room />;
   }
   return null;
 }
@@ -132,9 +128,9 @@ store.sub(connectionAtom, () => {
   if (ws) {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("onmessage", data);
+      // console.log("onmessage", data);
       const joined = data.joined;
-      if (typeof joined === "string") {
+      if (typeof joined === "string" && joined !== store.get(nameAtom)) {
         store.set(membersAtom, (members) => [...members, joined]);
       }
       const quit = data.quit;
