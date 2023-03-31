@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build --emptyOutDir",
-    "watch": "vite build -w  --emptyOutDir",
+    "build": "tsc && vite build",
+    "watch": "vite build -w",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -6,6 +6,7 @@ export default defineConfig({
   build: {
     minify: true,
     outDir: "../dist",
+    emptyOutDir: true,
   },
   plugins: [react()],
 });
