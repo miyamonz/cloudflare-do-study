@@ -40,12 +40,14 @@ function App() {
   return null;
 }
 
+function nameFromLocalStorage() {
+  const n = window.localStorage.getItem("name");
+  return (n && JSON.parse(n)) ?? "";
+}
 function InputName() {
   const [, setName] = useAtom(nameAtom);
   const [, setNameCache] = useAtom(nameCacheAtom);
-  const name: string =
-    JSON.parse(window.localStorage.getItem("name") ?? "") || "";
-  const [text, setText] = useState(name);
+  const [text, setText] = useState(nameFromLocalStorage());
   const [, setWs] = useAtom(connectionAtom);
   const [, setState] = useAtom(stateAtom);
 
