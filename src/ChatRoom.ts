@@ -39,7 +39,7 @@ export class ChatRoom {
         throw new Error("missing name");
       }
       const { server, res } = await websocketHandler(c);
-      this.handleSession(server, name);
+      await this.handleSession(server, name);
       return res;
     });
   }
