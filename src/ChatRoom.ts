@@ -77,13 +77,13 @@ export class ChatRoom {
     let storage = await this.storage.list({ reverse: true });
     console.log("length", [...storage.values()].length);
 
-    [...storage.entries()].forEach(([key, value]) => {
+    [...storage.entries()].forEach(async ([key, value]) => {
       if (typeof value !== "string") return;
       const json = JSON.parse(value);
 
       if (!json.isDown) {
         console.log(json);
-        this.storage.delete(key);
+        await this.storage.delete(key);
       }
     });
 
@@ -93,92 +93,30 @@ export class ChatRoom {
       webSocket.send(value);
     });
 
-    // Set event handlers to receive messages.
-    const wsApp = new Hono();
-
-    // restrict message length
-    // wsApp.use(async (c, next) => {
-    //   await next();
-    //   const json = await c.res.json<any>();
-    //   const message = json?.message;
-    //   if (message?.length > 256) {
-    //     c.res = c.json({ error: "Message too long." });
-    //   }
-    // });
-
-    wsApp.use(async (c, next) => {
-      if (session.quit) webSocket.close(1011, "WebSocket broken.");
-      await next();
-    });
-
-    //broadcast
-    wsApp.use(async (c, next) => {
-      await next();
-
-      const data = await c.res.json();
-      c.res = c.json(data);
-
-      const dataStr = JSON.stringify(data);
-      this.broadcast(dataStr);
-    });
-
-    // save message
-    wsApp.use(async (c, next) => {
-      await next();
-
-      const isDown = c.req.query("isDown") === "true" ?? false;
-      if (isDown) {
-        const data = await c.res.json();
-        c.res = c.json(data);
-        const dataStr = JSON.stringify(data);
-
-        const timestamp = Number(c.req.header("timestamp"));
-        const key = new Date(timestamp).toISOString();
-        await this.storage.put(key, dataStr);
-      }
-    });
-
-    // timestamp
-    wsApp.use(async (c, next) => {
-      await next();
-      const json = await c.res.json<any>();
-      const timestamp = Number(c.req.header("timestamp"));
-      this.lastTimestamp = timestamp;
-      c.res = c.json({ ...json, timestamp });
-    });
-
-    wsApp.all("/mousePos", async (c) => {
-      const data = await c.req.json();
-      const ret = {
-        name: data.name,
-        type: data.type,
-        pos: data.pos,
-        isDown: data.isDown,
-        color: data.color,
-      };
-      return c.json(ret);
-    });
-
     webSocket.addEventListener("message", async (msg) => {
       try {
         let data = JSON.parse(msg.data as string);
         if (data.type !== "mousePos") console.log(data);
+        if (session.quit) webSocket.close(1011, "WebSocket broken.");
 
-        const params = new URLSearchParams(data);
-
-        const path = (data.type[0] !== "/" ? "/" : "") + data.type;
         const timestamp = Math.max(Date.now(), this.lastTimestamp + 1);
-        const res = await wsApp.request(path + "?" + params.toString(), {
-          headers: {
-            timestamp: timestamp.toString(),
-          },
-          method: "POST",
-          body: JSON.stringify(data),
-        });
+        const data2 = {
+          name: data.name,
+          type: data.type,
+          pos: data.pos,
+          isDown: data.isDown,
+          color: data.color,
+          timestamp: timestamp,
+        };
+        this.lastTimestamp = timestamp;
 
-        const resjson = await res.json();
-        if (resjson) {
-          webSocket.send(JSON.stringify(resjson));
+        const dataStr = JSON.stringify(data2);
+        this.broadcast(dataStr);
+
+        //save
+        if (data.isDown) {
+          const key = new Date(timestamp).toISOString();
+          await this.storage.put(key, dataStr);
         }
       } catch (err) {
         // Report any exceptions directly back to the client. As with our handleErrors() this
