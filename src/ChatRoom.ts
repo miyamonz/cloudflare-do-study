@@ -6,10 +6,8 @@ import { websocketHandler } from "./websocketHandler";
 const app = new Hono();
 
 type UserSession = {
+  name: string;
   webSocket: WebSocket;
-  // 接続確立後に送る。storageのlistや、name確定後などに送る。
-  blockedMessages: string[];
-  name?: string;
   quit?: boolean;
 };
 export class ChatRoom {
@@ -36,8 +34,15 @@ export class ChatRoom {
     // more than a millisecond will have gone by.
     this.lastTimestamp = 0;
 
-    const handleSession = this.handleSession.bind(this);
-    app.get("/websocket", websocketHandler(handleSession));
+    app.get("/websocket", async (c) => {
+      const name = c.req.query("name");
+      if (!name) {
+        throw new Error("missing name");
+      }
+      const { server, res } = await websocketHandler(c);
+      this.handleSession(server, name);
+      return res;
+    });
   }
 
   async fetch(request: Request) {
@@ -45,7 +50,7 @@ export class ChatRoom {
   }
 
   // handleSession() implements our WebSocket-based chat protocol.
-  async handleSession(webSocket: WebSocket, ip: string) {
+  async handleSession(webSocket: WebSocket, name: string) {
     // Accept our end of the WebSocket. This tells the runtime that we'll be terminating the
     // WebSocket in JavaScript, not sending it elsewhere.
     webSocket.accept();
@@ -59,18 +64,12 @@ export class ChatRoom {
     // );
 
     // Create our session and add it to the sessions list.
-    // We don't send any messages to the client until it has sent us the initial user info
-    // message. Until then, we will queue messages in `session.blockedMessages`.
-    const session: UserSession = { webSocket, blockedMessages: [] };
+    const session: UserSession = { name, webSocket };
     this.sessions.push(session);
 
-    // Queue "join" messages for all online users, to populate the client's roster.
+    // send "join" messages for all online users, to populate the client's roster.
     this.sessions.forEach((otherSession) => {
-      if (otherSession.name) {
-        session.blockedMessages.push(
-          JSON.stringify({ joined: otherSession.name })
-        );
-      }
+      session.webSocket.send(JSON.stringify({ joined: otherSession.name }));
     });
 
     // Load the last 100 messages from the chat history stored on disk, and send them to the
@@ -78,19 +77,23 @@ export class ChatRoom {
     let storage = await this.storage.list({ reverse: true });
     console.log("length", [...storage.values()].length);
 
-    // [...storage.entries()].forEach(([key, value]) => {
-    //   console.log(value);
-    // });
+    [...storage.entries()].forEach(([key, value]) => {
+      if (typeof value !== "string") return;
+      const json = JSON.parse(value);
+
+      if (!json.isDown) {
+        console.log(json);
+        this.storage.delete(key);
+      }
+    });
 
     let backlog = [...storage.values()] as string[];
     backlog.reverse();
     backlog.forEach((value) => {
-      session.blockedMessages.push(value);
-      // webSocket.send(value);
+      webSocket.send(value);
     });
 
     // Set event handlers to receive messages.
-    let receivedUserInfo = false;
     const wsApp = new Hono();
 
     // restrict message length
@@ -105,21 +108,6 @@ export class ChatRoom {
 
     wsApp.use(async (c, next) => {
       if (session.quit) webSocket.close(1011, "WebSocket broken.");
-      await next();
-    });
-
-    // name resolve
-    wsApp.use(async (c, next) => {
-      const name = c.req.query("name");
-
-      if (name && !receivedUserInfo) {
-        session.name = name;
-        receivedUserInfo = true;
-        session.blockedMessages.forEach((message) => webSocket.send(message));
-        this.broadcast({ joined: name });
-        session.blockedMessages = [];
-        webSocket.send(JSON.stringify({ ready: true }));
-      }
       await next();
     });
 
@@ -205,9 +193,7 @@ export class ChatRoom {
     let closeOrErrorHandler = () => {
       session.quit = true;
       this.sessions = this.sessions.filter((member) => member !== session);
-      if (session.name) {
-        this.broadcast({ quit: session.name });
-      }
+      this.broadcast({ quit: session.name });
     };
     webSocket.addEventListener("close", closeOrErrorHandler);
     webSocket.addEventListener("error", closeOrErrorHandler);
@@ -222,29 +208,20 @@ export class ChatRoom {
     // Iterate over all the sessions sending them messages.
     let quitters: UserSession[] = [];
     this.sessions = this.sessions.filter((session) => {
-      if (session.name) {
-        try {
-          session.webSocket.send(message);
-          return true;
-        } catch (err) {
-          // Whoops, this connection is dead. Remove it from the list and arrange to notify
-          // everyone below.
-          session.quit = true;
-          quitters.push(session);
-          return false;
-        }
-      } else {
-        // This session hasn't sent the initial user info message yet, so we're not sending them
-        // messages yet (no secret lurking!). Queue the message to be sent later.
-        session.blockedMessages.push(message);
-        return true;
-      }
+      return sendMessage(session, message);
     });
 
     quitters.forEach((quitter) => {
-      if (quitter.name) {
-        this.broadcast({ quit: quitter.name });
-      }
+      this.broadcast({ quit: quitter.name });
     });
   }
+}
+function sendMessage(session: UserSession, data: string) {
+  try {
+    session.webSocket.send(data);
+    return true;
+  } catch (err) {
+    console.error(err);
+  }
+  return false;
 }

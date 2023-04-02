@@ -8,7 +8,7 @@ async function connectWebsocket(name: string) {
   const hostname = window.location.host;
 
   const ws = new WebSocket(
-    wss + hostname + "/api/room/" + roomName + "/websocket"
+    wss + hostname + "/api/room/" + roomName + "/websocket?name=" + name
   );
   const openPromise = new Promise<WebSocket>((resolve) => {
     ws.addEventListener("open", () => {
