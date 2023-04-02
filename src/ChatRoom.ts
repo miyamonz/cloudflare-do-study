@@ -8,13 +8,12 @@ type UserSession = {
   webSocket: WebSocket;
   quit?: boolean;
 };
+const app = new Hono();
 export class ChatRoom {
   storage: DurableObjectStorage;
   env: Env;
   sessions: UserSession[];
   lastTimestamp: number;
-
-  app = new Hono();
 
   constructor(state: DurableObjectState, env: Env) {
     // `controller.storage` provides access to our durable storage. It provides a simple KV
@@ -33,7 +32,7 @@ export class ChatRoom {
     // no need to store this to disk since we assume if the object is destroyed and recreated, much
     // more than a millisecond will have gone by.
     this.lastTimestamp = 0;
-    this.app.get("/websocket", async (c) => {
+    app.get("/websocket", async (c) => {
       const name = c.req.query("name");
       if (!name) {
         throw new Error("missing name");
@@ -45,7 +44,7 @@ export class ChatRoom {
   }
 
   async fetch(request: Request) {
-    return this.app.fetch(request);
+    return app.fetch(request);
   }
 
   // handleSession() implements our WebSocket-based chat protocol.
@@ -70,6 +69,7 @@ export class ChatRoom {
     this.sessions.forEach((otherSession) => {
       session.webSocket.send(JSON.stringify({ joined: otherSession.name }));
     });
+    this.broadcast({ joined: name });
 
     // Load the last 100 messages from the chat history stored on disk, and send them to the
     // client.
