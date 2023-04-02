@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-export const websocketHandler = async (c: Context) => {
+export const websocketHandler = (c: Context) => {
   if (c.req.header("Upgrade") !== "websocket") {
     throw new HTTPException(400, { message: "expected websocket" });
   }
@@ -12,7 +12,6 @@ export const websocketHandler = async (c: Context) => {
     });
   }
   const [client, server] = Object.values(new WebSocketPair());
-  // await handle(server, ip);
-  const res = c.json(null, { status: 101, webSocket: client });
+  const res = new Response(null, { status: 101, webSocket: client });
   return { server, ip, res };
 };

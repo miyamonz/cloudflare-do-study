@@ -38,7 +38,7 @@ export class ChatRoom {
       if (!name) {
         throw new Error("missing name");
       }
-      const { server, res } = await websocketHandler(c);
+      const { server, res } = websocketHandler(c);
       await this.handleSession(server, name);
       return res;
     });
