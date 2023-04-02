@@ -105,7 +105,7 @@ export class ChatRoom {
 
     // Load the last 100 messages from the chat history stored on disk, and send them to the
     // client.
-    let storage = await this.storage.list({ reverse: true, limit: 100 });
+    let storage = await this.storage.list({ reverse: true });
     let backlog = [...storage.values()] as string[];
     backlog.reverse();
     backlog.forEach((value) => {
