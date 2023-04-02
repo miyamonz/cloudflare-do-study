@@ -144,7 +144,7 @@ store.sub(connectionAtom, () => {
       if (typeof quit === "string") {
         store.set(membersAtom, (members) => members.filter((m) => m !== quit));
       }
-      if (data.type === "mousePos" && data.name !== store.get(nameAtom)) {
+      if (data.type === "mousePos") {
         store.set(memberFamily(data.name), data);
 
         const ctx = store.get(canvasContextAtom);
