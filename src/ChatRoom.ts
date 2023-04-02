@@ -3,8 +3,6 @@ import { Bindings as Env } from ".";
 import { websocketHandler } from "./websocketHandler";
 // import { RateLimiterClient } from "./RateLimiter";
 
-const app = new Hono();
-
 type UserSession = {
   name: string;
   webSocket: WebSocket;
@@ -15,6 +13,8 @@ export class ChatRoom {
   env: Env;
   sessions: UserSession[];
   lastTimestamp: number;
+
+  app = new Hono();
 
   constructor(state: DurableObjectState, env: Env) {
     // `controller.storage` provides access to our durable storage. It provides a simple KV
@@ -33,8 +33,7 @@ export class ChatRoom {
     // no need to store this to disk since we assume if the object is destroyed and recreated, much
     // more than a millisecond will have gone by.
     this.lastTimestamp = 0;
-
-    app.get("/websocket", async (c) => {
+    this.app.get("/websocket", async (c) => {
       const name = c.req.query("name");
       if (!name) {
         throw new Error("missing name");
@@ -46,7 +45,7 @@ export class ChatRoom {
   }
 
   async fetch(request: Request) {
-    return app.fetch(request);
+    return this.app.fetch(request);
   }
 
   // handleSession() implements our WebSocket-based chat protocol.
