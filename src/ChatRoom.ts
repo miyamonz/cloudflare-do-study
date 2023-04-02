@@ -1,6 +1,9 @@
+import { Hono } from "hono";
 import { Bindings as Env } from ".";
-import { handleErrors } from "./handleErrors";
+import { websocketHandler } from "./websocketHandler";
 // import { RateLimiterClient } from "./RateLimiter";
+
+const app = new Hono();
 
 type Session = {
   webSocket: WebSocket;
@@ -14,10 +17,10 @@ export class ChatRoom {
   sessions: Session[];
   lastTimestamp: number;
 
-  constructor(controller: DurableObjectState, env: Env) {
+  constructor(state: DurableObjectState, env: Env) {
     // `controller.storage` provides access to our durable storage. It provides a simple KV
     // get()/put() interface.
-    this.storage = controller.storage;
+    this.storage = state.storage;
 
     // `env` is our environment bindings (discussed earlier).
     this.env = env;
@@ -31,47 +34,13 @@ export class ChatRoom {
     // no need to store this to disk since we assume if the object is destroyed and recreated, much
     // more than a millisecond will have gone by.
     this.lastTimestamp = 0;
+
+    const handleSession = this.handleSession.bind(this);
+    app.get("/websocket", websocketHandler(handleSession));
   }
 
-  // The system will call fetch() whenever an HTTP request is sent to this Object. Such requests
-  // can only be sent from other Worker code, such as the code above; these requests don't come
-  // directly from the internet. In the future, we will support other formats than HTTP for these
-  // communications, but we started with HTTP for its familiarity.
   async fetch(request: Request) {
-    return await handleErrors(request, async () => {
-      let url = new URL(request.url);
-
-      switch (url.pathname) {
-        case "/websocket": {
-          // The request is to `/api/room/<name>/websocket`. A client is trying to establish a new
-          // WebSocket session.
-          if (request.headers.get("Upgrade") != "websocket") {
-            return new Response("expected websocket", { status: 400 });
-          }
-
-          // Get the client's IP address for use with the rate limiter.
-          const ip = request.headers.get("CF-Connecting-IP");
-          if (!ip) {
-            return new Response("missing CF-Connecting-IP header", {
-              status: 400,
-            });
-          }
-
-          // To accept the WebSocket request, we create a WebSocketPair (which is like a socketpair,
-          // i.e. two WebSockets that talk to each other), we return one end of the pair in the
-          // response, and we operate on the other end. Note that this API is not part of the
-          // Fetch API standard; unfortunately, the Fetch API / Service Workers specs do not define
-          // any way to act as a WebSocket server today.
-          const pair = new WebSocketPair();
-          const [client, server] = [pair[0], pair[1]];
-          await this.handleSession(server, ip);
-          return new Response(null, { status: 101, webSocket: client });
-        }
-
-        default:
-          return new Response("Not found", { status: 404 });
-      }
-    });
+    return app.fetch(request);
   }
 
   // handleSession() implements our WebSocket-based chat protocol.
@@ -105,7 +74,7 @@ export class ChatRoom {
 
     // Load the last 100 messages from the chat history stored on disk, and send them to the
     // client.
-    let storage = await this.storage.list({ reverse: true, limit: 100 });
+    let storage = await this.storage.list({ reverse: true });
     let backlog = [...storage.values()] as string[];
     backlog.reverse();
     backlog.forEach((value) => {
